@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Agent</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome pour les icônes -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .ticket-card {
+            transition: all 0.3s ease;
+        }
+        .ticket-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .current-ticket {
+            background-color: #f8f9fa;
+            border-left: 4px solid #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <h1 class="mb-4">Dashboard Agent</h1>
+        
+        <!-- Section Ticket en cours -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Ticket en cours</h5>
+                    </div>
+                    <div class="card-body" id="currentTicketSection">
+                        <div id="noCurrentTicket" class="text-center py-4">
+                            <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Aucun ticket en cours</p>
+                        </div>
+                        <div id="currentTicket" class="d-none">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h4 id="currentTicketNumber"></h4>
+                                    <p id="currentTicketType" class="text-muted"></p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <button class="btn btn-success" onclick="terminerTicket()">
+                                        <i class="fas fa-check"></i> Terminer le ticket
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section Liste des tickets -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Liste des tickets en attente</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Numéro</th>
+                                        <th>Type</th>
+                                        <th>Date d'émission</th>
+                                        <th>Position</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ticketsList">
+                                    <!-- Les tickets seront ajoutés ici dynamiquement -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle avec Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Variables globales
+        let currentTicket = null;
+        const API_BASE_URL = 'http://localhost:8000/api';
+        const AGENCE_ID = '507ffe5a-5c5c-4c8e-875a-be4ea6096c50'; // ID de l'Agence Centrale
+        const AGENT_ID = '369dbb65-0d67-47fd-bad2-1182c6c09c67'; // ID de l'agent spécifié
+
+        // Fonction pour obtenir le token CSRF
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Fonction pour charger la liste des tickets
+        async function loadTickets() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/client/file-attente/${AGENCE_ID}/`);
+                const data = await response.json();
+                displayTickets(data.tickets_en_attente);
+            } catch (error) {
+                console.error('Erreur lors du chargement des tickets:', error);
+            }
+        }
+
+        // Fonction pour afficher les tickets dans le tableau
+        function displayTickets(tickets) {
+            const ticketsList = document.getElementById('ticketsList');
+            ticketsList.innerHTML = '';
+
+            tickets.forEach(ticket => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ticket.numero_ticket}</td>
+                    <td>${ticket.type_reservation}</td>
+                    <td>${new Date(ticket.date_emission).toLocaleString()}</td>
+                    <td>${ticket.position_file}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="appelerTicket('${ticket.id_ticket}')">
+                            <i class="fas fa-bell"></i> Appeler
+                        </button>
+                    </td>
+                `;
+                ticketsList.appendChild(row);
+            });
+        }
+
+        // Fonction pour appeler un ticket
+        async function appelerTicket(ticketId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/agent/appeler-ticket/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticket_id: ticketId,
+                        agent_id: AGENT_ID,
+                        message_notification: 'Présentez-vous au guichet'
+                    })
+                });
+
+                const data = await response.json();
+                console.log('Réponse de l\'API:', data);
+
+                if (response.ok) {
+                    if (data.ticket) {
+                        setCurrentTicket(data.ticket);
+                        loadTickets();
+                    } else {
+                        console.error('La réponse de l\'API ne contient pas de ticket');
+                    }
+                } else {
+                    console.error('Erreur API:', data);
+                }
+            } catch (error) {
+                console.error('Erreur lors de l\'appel du ticket:', error);
+            }
+        }
+
+        // Fonction pour terminer un ticket
+        async function terminerTicket() {
+            if (!currentTicket) return;
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/agent/terminer-ticket/`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ticket_id: currentTicket.id_ticket
+                    })
+                });
+
+                if (response.ok) {
+                    clearCurrentTicket();
+                    loadTickets();
+                } else {
+                    console.error('Erreur API:', response.status);
+                }
+            } catch (error) {
+                console.error('Erreur lors de la finalisation du ticket:', error);
+            }
+        }
+
+        // Fonction pour définir le ticket en cours
+        function setCurrentTicket(ticket) {
+            console.log('Définition du ticket en cours:', ticket);
+            currentTicket = ticket;
+            document.getElementById('noCurrentTicket').classList.add('d-none');
+            document.getElementById('currentTicket').classList.remove('d-none');
+            document.getElementById('currentTicketNumber').textContent = ticket.numero_ticket;
+            document.getElementById('currentTicketType').textContent = `Type: ${ticket.type_reservation}`;
+        }
+
+        // Fonction pour effacer le ticket en cours
+        function clearCurrentTicket() {
+            currentTicket = null;
+            document.getElementById('noCurrentTicket').classList.remove('d-none');
+            document.getElementById('currentTicket').classList.add('d-none');
+        }
+
+        // Charger les tickets au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTickets();
+            // Rafraîchir la liste toutes les 30 secondes
+            setInterval(loadTickets, 30000);
+        });
+    </script>
+</body>
+</html> 
