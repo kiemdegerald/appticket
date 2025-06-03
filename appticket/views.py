@@ -456,13 +456,13 @@ class StatistiquesAPIView(APIView):
         total_tickets_en_attente = Ticket.objects.filter(etat='en_attente').count()
         total_tickets_termines_aujourd_hui = Ticket.objects.filter(
             etat='termine',
-            date_emission__date=today
+            date_fin__date=today  # Changé de date_emission à date_fin
         ).count()
         
         # Temps d'attente moyen
         tickets_termines = Ticket.objects.filter(
             etat='termine',
-            date_emission__date=today,
+            date_fin__date=today,
             date_fin__isnull=False
         )
         

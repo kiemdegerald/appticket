@@ -20,65 +20,168 @@
             background-color: #f8f9fa;
             border-left: 4px solid #0d6efd;
         }
+        .sidebar {
+            min-height: 100vh;
+            background-color: #343a40;
+            color: white;
+            padding-top: 20px;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.8);
+            padding: 10px 20px;
+        }
+        .sidebar .nav-link:hover {
+            color: white;
+            background-color: rgba(255,255,255,.1);
+        }
+        .stat-card {
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-card i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        .stat-card .number {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
-    <div class="container-fluid py-4">
-        <h1 class="mb-4">Dashboard Agent</h1>
-        
-        <!-- Section Ticket en cours -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Ticket en cours</h5>
-                    </div>
-                    <div class="card-body" id="currentTicketSection">
-                        <div id="noCurrentTicket" class="text-center py-4">
-                            <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
-                            <p class="text-muted">Aucun ticket en cours</p>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar">
+                <h4 class="text-center mb-4">ONEA</h4>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            <i class="fas fa-home me-2"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-ticket-alt me-2"></i> Tickets
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-chart-bar me-2"></i> Statistiques
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-cog me-2"></i> Paramètres
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 py-4">
+                <h1 class="mb-4">Dashboard Agent</h1>
+
+                <!-- Statistiques -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="stat-card bg-primary text-white">
+                            <i class="fas fa-users"></i>
+                            <h5>Tickets en attente</h5>
+                            <div class="number" id="ticketsEnAttente">0</div>
                         </div>
-                        <div id="currentTicket" class="d-none">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <h4 id="currentTicketNumber"></h4>
-                                    <p id="currentTicketType" class="text-muted"></p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card bg-success text-white">
+                            <i class="fas fa-check-circle"></i>
+                            <h5>Tickets terminés</h5>
+                            <div class="number" id="ticketsTermines">0</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Section Ticket en cours -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">Ticket en cours</h5>
+                            </div>
+                            <div class="card-body" id="currentTicketSection">
+                                <div id="noCurrentTicket" class="text-center py-4">
+                                    <i class="fas fa-ticket-alt fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Aucun ticket en cours</p>
                                 </div>
-                                <div class="col-md-4 text-end">
-                                    <button class="btn btn-success" onclick="terminerTicket()">
-                                        <i class="fas fa-check"></i> Terminer le ticket
-                                    </button>
+                                <div id="currentTicket" class="d-none">
+                                    <div class="row align-items-center">
+                                        <div class="col-md-8">
+                                            <h4 id="currentTicketNumber"></h4>
+                                            <p id="currentTicketType" class="text-muted"></p>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <button class="btn btn-success" onclick="terminerTicket()">
+                                                <i class="fas fa-check"></i> Terminer le ticket
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- Section Liste des tickets -->
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Liste des tickets en attente</h5>
+                <!-- Section Liste des tickets -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Liste des tickets en attente</h5>
+                                <div class="d-flex gap-2">
+                                    <input type="text" id="searchTicket" class="form-control" placeholder="Rechercher un ticket...">
+                                    <select id="filterType" class="form-select">
+                                        <option value="">Tous les types</option>
+                                        <option value="normal">Normal</option>
+                                        <option value="prioritaire">Prioritaire</option>
+                                        <option value="handicape">Handicapé</option>
+                                        <option value="personne_agee">Personne âgée</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Numéro</th>
+                                                <th>Type</th>
+                                                <th>Date d'émission</th>
+                                                <th>Position</th>
+                                                <th>Localisation</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="ticketsList">
+                                            <!-- Les tickets seront ajoutés ici dynamiquement -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Numéro</th>
-                                        <th>Type</th>
-                                        <th>Date d'émission</th>
-                                        <th>Position</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="ticketsList">
-                                    <!-- Les tickets seront ajoutés ici dynamiquement -->
-                                </tbody>
-                            </table>
+                </div>
+
+                <!-- Notifications Toast -->
+                <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                    <div id="notificationToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="toast-header">
+                            <i class="fas fa-bell me-2"></i>
+                            <strong class="me-auto">Notification</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                        <div class="toast-body">
+                            <!-- Le contenu de la notification sera ajouté ici -->
                         </div>
                     </div>
                 </div>
@@ -93,23 +196,74 @@
         // Variables globales
         let currentTicket = null;
         const API_BASE_URL = 'http://localhost:8000/api';
-        const AGENCE_ID = '507ffe5a-5c5c-4c8e-875a-be4ea6096c50'; // ID de l'Agence Centrale
-        const AGENT_ID = '369dbb65-0d67-47fd-bad2-1182c6c09c67'; // ID de l'agent spécifié
+        const AGENCE_ID = '507ffe5a-5c5c-4c8e-875a-be4ea6096c50';
+        const AGENT_ID = '369dbb65-0d67-47fd-bad2-1182c6c09c67';
+        let allTickets = []; // Pour stocker tous les tickets
+        let notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
 
-        // Fonction pour obtenir le token CSRF
-        function getCookie(name) {
-            let cookieValue = null;
-            if (document.cookie && document.cookie !== '') {
-                const cookies = document.cookie.split(';');
-                for (let i = 0; i < cookies.length; i++) {
-                    const cookie = cookies[i].trim();
-                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                        break;
-                    }
-                }
+        // Fonction pour lire un message à voix haute
+        function speakMessage(message) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(message);
+                utterance.lang = 'fr-FR';
+                utterance.volume = 1;
+                utterance.rate = 1;
+                utterance.pitch = 1;
+                window.speechSynthesis.speak(utterance);
             }
-            return cookieValue;
+        }
+
+        // Fonction pour afficher une notification
+        function showNotification(message, type = 'info', shouldSpeak = false) {
+            const toast = document.getElementById('notificationToast');
+            const toastBody = toast.querySelector('.toast-body');
+            toastBody.textContent = message;
+            
+            // Supprimer toutes les classes de couleur précédentes
+            toast.classList.remove('bg-success', 'bg-danger', 'bg-info');
+            
+            // Ajouter la classe de couleur appropriée
+            if (type === 'success') {
+                toast.classList.add('bg-success', 'text-white');
+            } else if (type === 'danger') {
+                toast.classList.add('bg-danger', 'text-white');
+            } else {
+                toast.classList.add('bg-info', 'text-white');
+            }
+            
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            notificationSound.play();
+            if (shouldSpeak) {
+                speakMessage(message);
+            }
+        }
+
+        // Fonction pour filtrer les tickets
+        function filterTickets() {
+            const searchTerm = document.getElementById('searchTicket').value.toLowerCase();
+            const filterType = document.getElementById('filterType').value;
+            
+            const filteredTickets = allTickets.filter(ticket => {
+                const matchesSearch = ticket.numero_ticket.toLowerCase().includes(searchTerm);
+                const matchesType = !filterType || ticket.type_reservation === filterType;
+                return matchesSearch && matchesType;
+            });
+            
+            displayTickets(filteredTickets);
+        }
+
+        // Fonction pour mettre à jour les statistiques
+        async function updateStats(data) {
+            document.getElementById('ticketsEnAttente').textContent = data.nombre_tickets_en_attente || 0;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/statistiques/`);
+                const statsData = await response.json();
+                document.getElementById('ticketsTermines').textContent = statsData.total_tickets_termines_aujourd_hui || 0;
+            } catch (error) {
+                console.error('Erreur lors de la récupération des statistiques:', error);
+            }
         }
 
         // Fonction pour charger la liste des tickets
@@ -117,7 +271,9 @@
             try {
                 const response = await fetch(`${API_BASE_URL}/client/file-attente/${AGENCE_ID}/`);
                 const data = await response.json();
-                displayTickets(data.tickets_en_attente);
+                allTickets = data.tickets_en_attente; // Stocker tous les tickets
+                filterTickets(); // Appliquer les filtres
+                updateStats(data);
             } catch (error) {
                 console.error('Erreur lors du chargement des tickets:', error);
             }
@@ -135,6 +291,11 @@
                     <td>${ticket.type_reservation}</td>
                     <td>${new Date(ticket.date_emission).toLocaleString()}</td>
                     <td>${ticket.position_file}</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" onclick="localiserClient(${ticket.client_latitude}, ${ticket.client_longitude})">
+                            <i class="fas fa-map-marker-alt"></i> Voir sur la carte
+                        </button>
+                    </td>
                     <td>
                         <button class="btn btn-primary btn-sm" onclick="appelerTicket('${ticket.id_ticket}')">
                             <i class="fas fa-bell"></i> Appeler
@@ -161,17 +322,15 @@
                 });
 
                 const data = await response.json();
-                console.log('Réponse de l\'API:', data);
-
-                if (response.ok) {
-                    if (data.ticket) {
-                        setCurrentTicket(data.ticket);
-                        loadTickets();
-                    } else {
-                        console.error('La réponse de l\'API ne contient pas de ticket');
-                    }
-                } else {
-                    console.error('Erreur API:', data);
+                if (response.ok && data.ticket) {
+                    setCurrentTicket(data.ticket);
+                    loadTickets();
+                    // Extraire les deux derniers chiffres du numéro de ticket
+                    const lastTwoDigits = data.ticket.numero_ticket.slice(-2);
+                    const displayMessage = `Le ticket numéro ${data.ticket.numero_ticket} est appelé`;
+                    const voiceMessage = `Le ticket numéro ${lastTwoDigits} est appelé`;
+                    showNotification(displayMessage, 'success');
+                    speakMessage(voiceMessage);
                 }
             } catch (error) {
                 console.error('Erreur lors de l\'appel du ticket:', error);
@@ -196,8 +355,6 @@
                 if (response.ok) {
                     clearCurrentTicket();
                     loadTickets();
-                } else {
-                    console.error('Erreur API:', response.status);
                 }
             } catch (error) {
                 console.error('Erreur lors de la finalisation du ticket:', error);
@@ -220,6 +377,17 @@
             document.getElementById('noCurrentTicket').classList.remove('d-none');
             document.getElementById('currentTicket').classList.add('d-none');
         }
+
+        // Fonction pour localiser un client
+        function localiserClient(latitude, longitude) {
+            // Ouvrir Google Maps dans un nouvel onglet
+            const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
+            window.open(url, '_blank');
+        }
+
+        // Écouteurs d'événements pour les filtres
+        document.getElementById('searchTicket').addEventListener('input', filterTickets);
+        document.getElementById('filterType').addEventListener('change', filterTickets);
 
         // Charger les tickets au chargement de la page
         document.addEventListener('DOMContentLoaded', () => {
