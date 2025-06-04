@@ -105,6 +105,7 @@ manual_urlpatterns = [
     path('admin/statistiques-agence/<uuid:agence_id>/', 
          views.AgenceStatistiquesAPIView.as_view(), 
          name='statistiques-agence'),
+    path('admin/agences/create/', views.create_agence_view, name='create_agence'),
 ]
 
 urlpatterns = format_suffix_patterns(manual_urlpatterns) + router.urls

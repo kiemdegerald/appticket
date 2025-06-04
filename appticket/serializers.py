@@ -129,6 +129,8 @@ class TicketSerializer(serializers.ModelSerializer):
     notifications = NotificationSerializer(many=True, read_only=True)
     temps_attente = serializers.SerializerMethodField()
     position_file = serializers.SerializerMethodField()
+    client_latitude = serializers.DecimalField(source='client.latitude', max_digits=10, decimal_places=8, read_only=True)
+    client_longitude = serializers.DecimalField(source='client.longitude', max_digits=11, decimal_places=8, read_only=True)
     
     class Meta:
         model = Ticket
@@ -137,12 +139,12 @@ class TicketSerializer(serializers.ModelSerializer):
             'date_emission', 'date_appel', 'date_fin', 'etat',
             'client', 'agent', 'agence',
             'client_info', 'agent_info', 'agence_info', 'notifications',
-            'temps_attente', 'position_file'
+            'temps_attente', 'position_file', 'client_latitude', 'client_longitude'
         ]
         read_only_fields = [
             'id_ticket', 'numero_ticket', 'date_emission', 'date_appel', 'date_fin',
             'client_info', 'agent_info', 'agence_info', 'notifications',
-            'temps_attente', 'position_file'
+            'temps_attente', 'position_file', 'client_latitude', 'client_longitude'
         ]
     
     def get_temps_attente(self, obj):

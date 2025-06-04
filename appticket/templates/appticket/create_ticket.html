@@ -36,6 +36,14 @@
             <div class="card-body">
                 <form id="ticketForm">
                     <div class="mb-3">
+                        <label for="agence" class="form-label">Agence</label>
+                        <select class="form-select" id="agence" required>
+                            <option value="">Sélectionnez une agence</option>
+                            <option value="507ffe5a-5c5c-4c8e-875a-be4ea6096c50">Direction Générale ONEA</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
                         <label for="typeReservation" class="form-label">Type de réservation</label>
                         <select class="form-select" id="typeReservation" required>
                             <option value="">Sélectionnez un type</option>
@@ -192,10 +200,16 @@
 
         // Fonction pour créer un ticket
         async function createTicket() {
+            const agenceId = document.getElementById('agence').value;
             const typeReservation = document.getElementById('typeReservation').value;
             const latitude = document.getElementById('latitude').value;
             const longitude = document.getElementById('longitude').value;
             
+            if (!agenceId) {
+                showNotification('Veuillez sélectionner une agence', 'danger');
+                return;
+            }
+
             if (!typeReservation) {
                 showNotification('Veuillez sélectionner un type de réservation', 'danger');
                 return;
@@ -218,6 +232,7 @@
                         'X-CSRFToken': getCookie('csrftoken')
                     },
                     body: JSON.stringify({
+                        agence_id: agenceId,
                         type_reservation: typeReservation,
                         client_latitude: formattedLatitude,
                         client_longitude: formattedLongitude
@@ -228,6 +243,7 @@
                 if (response.ok) {
                     showNotification('Ticket créé avec succès !', 'success');
                     // Réinitialiser le formulaire
+                    document.getElementById('agence').value = '';
                     document.getElementById('typeReservation').value = '';
                     // Rafraîchir la position
                     getCurrentPosition();

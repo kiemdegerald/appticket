@@ -593,3 +593,7 @@ def agent_dashboard(request):
 
 def create_ticket_view(request):
     return render(request, 'appticket/create_ticket.html')
+
+
+def create_agence_view(request):
+    return render(request, 'appticket/create_agence.html')

@@ -48,6 +48,13 @@
             font-size: 1.5rem;
             font-weight: bold;
         }
+        #map {
+            height: 400px;
+            width: 100%;
+        }
+        .modal-lg {
+            max-width: 800px;
+        }
     </style>
 </head>
 <body>
@@ -189,17 +196,40 @@
         </div>
     </div>
 
-    <!-- Bootstrap Bundle avec Popper -->
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <!-- Leaflet CSS et JS pour la carte -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <!-- Modal pour la carte -->
+    <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mapModalLabel">Localisation du client</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="map"></div>
+                    <div class="mt-3 text-center">
+                        <button id="navigationButton" class="btn btn-primary" onclick="naviguerVersClient()">
+                            <i class="fas fa-directions"></i> Obtenir l'itinéraire
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         // Variables globales
         let currentTicket = null;
+        let currentClientCoords = null;
         const API_BASE_URL = 'http://localhost:8000/api';
-        const AGENCE_ID = '507ffe5a-5c5c-4c8e-875a-be4ea6096c50';
+        const AGENCE_ID = '2c8ee4e2-ad2d-4845-b9e5-aa9b46b3c2e1';
         const AGENT_ID = '369dbb65-0d67-47fd-bad2-1182c6c09c67';
-        let allTickets = []; // Pour stocker tous les tickets
+        let allTickets = [];
         let notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
+        let map = null;
 
         // Fonction pour lire un message à voix haute
         function speakMessage(message) {
@@ -253,29 +283,18 @@
             displayTickets(filteredTickets);
         }
 
-        // Fonction pour mettre à jour les statistiques
-        async function updateStats(data) {
-            document.getElementById('ticketsEnAttente').textContent = data.nombre_tickets_en_attente || 0;
-            
-            try {
-                const response = await fetch(`${API_BASE_URL}/admin/statistiques/`);
-                const statsData = await response.json();
-                document.getElementById('ticketsTermines').textContent = statsData.total_tickets_termines_aujourd_hui || 0;
-            } catch (error) {
-                console.error('Erreur lors de la récupération des statistiques:', error);
-            }
-        }
-
         // Fonction pour charger la liste des tickets
         async function loadTickets() {
             try {
                 const response = await fetch(`${API_BASE_URL}/client/file-attente/${AGENCE_ID}/`);
                 const data = await response.json();
-                allTickets = data.tickets_en_attente; // Stocker tous les tickets
+                console.log('Tickets reçus:', data); // Pour le débogage
+                allTickets = data.tickets_en_attente || []; // Stocker tous les tickets
                 filterTickets(); // Appliquer les filtres
                 updateStats(data);
             } catch (error) {
                 console.error('Erreur lors du chargement des tickets:', error);
+                showNotification('Erreur lors du chargement des tickets', 'danger');
             }
         }
 
@@ -283,16 +302,25 @@
         function displayTickets(tickets) {
             const ticketsList = document.getElementById('ticketsList');
             ticketsList.innerHTML = '';
-
+            
+            if (tickets.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="6" class="text-center">Aucun ticket en attente</td>
+                `;
+                ticketsList.appendChild(row);
+                return;
+            }
+            
             tickets.forEach(ticket => {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${ticket.numero_ticket}</td>
                     <td>${ticket.type_reservation}</td>
                     <td>${new Date(ticket.date_emission).toLocaleString()}</td>
-                    <td>${ticket.position_file}</td>
+                    <td>${ticket.position_file || 'N/A'}</td>
                     <td>
-                        <button class="btn btn-info btn-sm" onclick="localiserClient(${ticket.client_latitude}, ${ticket.client_longitude})">
+                        <button class="btn btn-info btn-sm" onclick="localiserClient(${ticket.client_latitude || 0}, ${ticket.client_longitude || 0})">
                             <i class="fas fa-map-marker-alt"></i> Voir sur la carte
                         </button>
                     </td>
@@ -304,6 +332,19 @@
                 `;
                 ticketsList.appendChild(row);
             });
+        }
+
+        // Fonction pour mettre à jour les statistiques
+        async function updateStats(data) {
+            document.getElementById('ticketsEnAttente').textContent = data.nombre_tickets_en_attente || 0;
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/admin/statistiques/`);
+                const statsData = await response.json();
+                document.getElementById('ticketsTermines').textContent = statsData.total_tickets_termines_aujourd_hui || 0;
+            } catch (error) {
+                console.error('Erreur lors de la récupération des statistiques:', error);
+            }
         }
 
         // Fonction pour appeler un ticket
@@ -320,7 +361,7 @@
                         message_notification: 'Présentez-vous au guichet'
                     })
                 });
-
+                
                 const data = await response.json();
                 if (response.ok && data.ticket) {
                     setCurrentTicket(data.ticket);
@@ -351,7 +392,7 @@
                         ticket_id: currentTicket.id_ticket
                     })
                 });
-
+                
                 if (response.ok) {
                     clearCurrentTicket();
                     loadTickets();
@@ -380,10 +421,84 @@
 
         // Fonction pour localiser un client
         function localiserClient(latitude, longitude) {
-            // Ouvrir Google Maps dans un nouvel onglet
-            const url = `https://www.google.com/maps?q=${latitude},${longitude}`;
-            window.open(url, '_blank');
+            // Vérifier si les coordonnées sont valides
+            if (!latitude || !longitude || latitude === 0 || longitude === 0) {
+                showNotification('Les coordonnées du client ne sont pas disponibles', 'warning');
+                return;
+            }
+
+            try {
+                // Sauvegarder les coordonnées actuelles
+                currentClientCoords = { latitude, longitude };
+
+                // Nettoyer le conteneur de la carte
+                const mapContainer = document.getElementById('map');
+                mapContainer.innerHTML = '';
+                
+                // Initialiser la carte
+                map = L.map('map').setView([latitude, longitude], 15);
+                
+                // Ajouter le fond de carte OpenStreetMap
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                
+                // Ajouter un marqueur à la position du client
+                L.marker([latitude, longitude])
+                    .addTo(map)
+                    .bindPopup('Position du client')
+                    .openPopup();
+                
+                // Afficher le modal
+                const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
+                mapModal.show();
+                
+                // Redimensionner la carte après l'ouverture du modal
+                setTimeout(() => {
+                    map.invalidateSize();
+                }, 400);
+            } catch (error) {
+                console.error('Erreur lors de l\'affichage de la carte:', error);
+                showNotification('Erreur lors de l\'affichage de la carte', 'danger');
+            }
         }
+
+        // Fonction pour naviguer vers le client
+        function naviguerVersClient() {
+            if (!currentClientCoords) {
+                showNotification('Aucune position client disponible', 'warning');
+                return;
+            }
+
+            // Demander la position actuelle de l'agent
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const agentLat = position.coords.latitude;
+                        const agentLng = position.coords.longitude;
+                        
+                        // Ouvrir Google Maps avec les directions
+                        const url = `https://www.google.com/maps/dir/?api=1&origin=${agentLat},${agentLng}&destination=${currentClientCoords.latitude},${currentClientCoords.longitude}&travelmode=driving`;
+                        window.open(url, '_blank');
+                    },
+                    (error) => {
+                        console.error('Erreur de géolocalisation:', error);
+                        showNotification('Impossible d\'obtenir votre position. Veuillez activer la géolocalisation.', 'warning');
+                    }
+                );
+            } else {
+                showNotification('La géolocalisation n\'est pas supportée par votre navigateur', 'warning');
+            }
+        }
+
+        // Écouteur d'événement pour nettoyer la carte quand le modal est fermé
+        document.getElementById('mapModal').addEventListener('hidden.bs.modal', function () {
+            if (map) {
+                map.remove();
+                map = null;
+            }
+            currentClientCoords = null;
+        });
 
         // Écouteurs d'événements pour les filtres
         document.getElementById('searchTicket').addEventListener('input', filterTickets);
@@ -392,8 +507,8 @@
         // Charger les tickets au chargement de la page
         document.addEventListener('DOMContentLoaded', () => {
             loadTickets();
-            // Rafraîchir la liste toutes les 30 secondes
-            setInterval(loadTickets, 30000);
+            // Rafraîchir la liste toutes les 5 secondes
+            setInterval(loadTickets, 5000);
         });
     </script>
 </body>
