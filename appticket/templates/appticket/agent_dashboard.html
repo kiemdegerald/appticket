@@ -166,6 +166,7 @@
                                                 <th>Date d'émission</th>
                                                 <th>Position</th>
                                                 <th>Localisation</th>
+                                                <th>Temps d'attente</th>
                                                 <th>Actions</th>
                                             </tr>
                                         </thead>
@@ -303,16 +304,19 @@
             const ticketsList = document.getElementById('ticketsList');
             ticketsList.innerHTML = '';
             
-            if (tickets.length === 0) {
+            if (!tickets || tickets.length === 0) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td colspan="6" class="text-center">Aucun ticket en attente</td>
+                    <td colspan="7" class="text-center">Aucun ticket en attente</td>
                 `;
                 ticketsList.appendChild(row);
                 return;
             }
             
             tickets.forEach(ticket => {
+                // Calculer le temps d'attente en fonction de la position
+                const tempsAttente = ticket.position_file ? ticket.position_file * 2 : 0;
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${ticket.numero_ticket}</td>
@@ -324,6 +328,7 @@
                             <i class="fas fa-map-marker-alt"></i> Voir sur la carte
                         </button>
                     </td>
+                    <td>${tempsAttente} minutes</td>
                     <td>
                         <button class="btn btn-primary btn-sm" onclick="appelerTicket('${ticket.id_ticket}')">
                             <i class="fas fa-bell"></i> Appeler

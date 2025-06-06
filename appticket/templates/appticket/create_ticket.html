@@ -90,6 +90,46 @@
             </div>
         </div>
 
+        <!-- Section Liste des tickets -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Liste des tickets en attente</h5>
+                        <div class="d-flex gap-2">
+                            <input type="text" id="searchTicket" class="form-control" placeholder="Rechercher un ticket...">
+                            <select id="filterType" class="form-select">
+                                <option value="">Tous les types</option>
+                                <option value="normal">Normal</option>
+                                <option value="prioritaire">Prioritaire</option>
+                                <option value="handicape">Handicapé</option>
+                                <option value="personne_agee">Personne âgée</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Numéro</th>
+                                        <th>Type</th>
+                                        <th>Date d'émission</th>
+                                        <th>Position</th>
+                                        <th>Localisation</th>
+                                        <th>Temps d'attente</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ticketsList">
+                                    <!-- Les tickets seront ajoutés ici dynamiquement -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="result" class="result-section d-none">
             <!-- Les résultats seront affichés ici -->
         </div>
@@ -107,6 +147,7 @@
         let map = null;
         let marker = null;
         let circle = null;
+        let allTickets = [];
 
         // Initialiser la carte
         function initMap() {
@@ -247,6 +288,8 @@
                     document.getElementById('typeReservation').value = '';
                     // Rafraîchir la position
                     getCurrentPosition();
+                    // Recharger la liste des tickets
+                    await loadTickets();
                 } else {
                     showNotification(data.error || 'Erreur lors de la création du ticket', 'danger');
                 }
@@ -301,11 +344,126 @@
             return cookieValue;
         }
 
+        // Fonction pour charger la liste des tickets
+        async function loadTickets() {
+            try {
+                const response = await fetch('/api/agent/tickets-en-cours/');
+                if (!response.ok) {
+                    throw new Error('Erreur lors du chargement des tickets');
+                }
+                
+                const tickets = await response.json();
+                allTickets = tickets;
+                displayTickets(tickets);
+            } catch (error) {
+                console.error('Erreur lors du chargement des tickets:', error);
+                showNotification('Erreur lors du chargement des tickets', 'danger');
+                displayTickets([]);
+            }
+        }
+
+        // Fonction pour afficher les tickets dans le tableau
+        function displayTickets(tickets) {
+            const ticketsList = document.getElementById('ticketsList');
+            ticketsList.innerHTML = '';
+            
+            if (!tickets || tickets.length === 0) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td colspan="6" class="text-center">Aucun ticket en attente</td>
+                `;
+                ticketsList.appendChild(row);
+                return;
+            }
+            
+            tickets.forEach(ticket => {
+                // Calculer le temps d'attente en fonction de la position
+                const tempsAttente = ticket.position_file ? ticket.position_file * 2 : 0;
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${ticket.numero_ticket}</td>
+                    <td>${ticket.type_reservation}</td>
+                    <td>${new Date(ticket.date_emission).toLocaleString()}</td>
+                    <td>${ticket.position_file || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" onclick="localiserClient(${ticket.client_latitude || 0}, ${ticket.client_longitude || 0})">
+                            <i class="fas fa-map-marker-alt"></i> Voir sur la carte
+                        </button>
+                    </td>
+                    <td>${tempsAttente} minutes</td>
+                `;
+                ticketsList.appendChild(row);
+            });
+        }
+
+        // Fonction pour localiser un client sur la carte
+        function localiserClient(latitude, longitude) {
+            if (map && latitude && longitude) {
+                map.setView([latitude, longitude], 15);
+                if (marker) {
+                    marker.setLatLng([latitude, longitude]);
+                } else {
+                    marker = L.marker([latitude, longitude]).addTo(map);
+                }
+            }
+        }
+
+        // Fonction pour appeler un ticket
+        async function appelerTicket(ticketId) {
+            try {
+                const response = await fetch('/api/agent/appeler-ticket/', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({
+                        ticket_id: ticketId
+                    })
+                });
+
+                if (response.ok) {
+                    showNotification('Ticket appelé avec succès', 'success');
+                    await loadTickets(); // Recharger la liste après l'appel
+                } else {
+                    const data = await response.json();
+                    showNotification(data.error || 'Erreur lors de l\'appel du ticket', 'danger');
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                showNotification('Erreur lors de l\'appel du ticket', 'danger');
+            }
+        }
+
+        // Fonction pour filtrer les tickets
+        function filterTickets() {
+            const searchTerm = document.getElementById('searchTicket').value.toLowerCase();
+            const filterType = document.getElementById('filterType').value;
+            
+            const filteredTickets = allTickets.filter(ticket => {
+                const matchesSearch = ticket.numero_ticket.toLowerCase().includes(searchTerm);
+                const matchesType = !filterType || ticket.type_reservation === filterType;
+                return matchesSearch && matchesType;
+            });
+            
+            displayTickets(filteredTickets);
+        }
+
+        // Écouteurs d'événements pour les filtres
+        document.getElementById('searchTicket').addEventListener('input', filterTickets);
+        document.getElementById('filterType').addEventListener('change', filterTickets);
+
         // Initialiser la carte et obtenir la position au chargement de la page
         window.addEventListener('load', function() {
             initMap();
             getCurrentPosition();
+            // Charger les tickets immédiatement
+            loadTickets();
         });
+
+        // Rafraîchir la liste toutes les 5 secondes
+        setInterval(loadTickets, 5000);
     </script>
 </body>
 </html> 
