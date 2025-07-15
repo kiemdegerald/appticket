@@ -78,10 +78,12 @@ class Ticket(models.Model):
     """Modèle pour les tickets"""
     
     TYPE_RESERVATION_CHOICES = [
-        ('normal', 'Normal'),
-        ('prioritaire', 'Prioritaire'),
-        ('handicape', 'Handicapé'),
-        ('personne_agee', 'Personne âgée'),
+        ('RECLAMATION', 'Réclamation'),
+        ('DEMANDE_INFO', 'Demande d\'information'),
+        ('DEMANDE_BRANCHEMENT', 'Demande de branchement'),
+        ('FACTURE', 'Problème de facturation'),
+        ('PANNE', 'Signalement de panne'),
+        ('AUTRE', 'Autre'),
     ]
     
     ETAT_CHOICES = [

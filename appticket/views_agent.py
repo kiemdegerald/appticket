@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
-from .models import Agent, Ticket
+from .models import Agent, Ticket, Agence
 from .serializers import TicketSerializer
 from django.utils import timezone
 
@@ -102,6 +102,67 @@ class AgentStatistiquesAPIView(APIView):
             'tickets_termines_aujourd_hui': tickets_termines_aujourd_hui,
             'temps_attente_moyen': temps_attente_moyen
         })
+
+# NOUVELLE VUE POUR LES TICKETS DE L'AGENCE
+class AgentTicketsAgenceAPIView(APIView):
+    """Vue pour récupérer tous les tickets d'une agence pour les agents"""
+    
+    def get(self, request, agence_id):
+        """Récupérer tous les tickets d'une agence"""
+        try:
+            agence = Agence.objects.get(id_agence=agence_id)
+        except Agence.DoesNotExist:
+            return Response(
+                {'error': 'Agence introuvable'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Récupérer tous les tickets de l'agence (tous états)
+        tous_les_tickets = Ticket.objects.filter(
+            agence=agence
+        ).order_by('-date_emission')
+        
+        # Récupérer les tickets en attente
+        tickets_en_attente = Ticket.objects.filter(
+            agence=agence,
+            etat='en_attente'
+        ).order_by('date_emission')
+        
+        # Calculer le temps d'attente moyen
+        tickets_termines_aujourd_hui = Ticket.objects.filter(
+            agence=agence,
+            etat='termine',
+            date_emission__date=timezone.now().date()
+        )
+        
+        temps_attente_moyen = 0
+        if tickets_termines_aujourd_hui.exists():
+            total_temps = sum([
+                (ticket.date_fin - ticket.date_emission).total_seconds() / 60
+                for ticket in tickets_termines_aujourd_hui
+                if ticket.date_fin
+            ])
+            temps_attente_moyen = int(total_temps / tickets_termines_aujourd_hui.count()) if total_temps > 0 else 0
+        
+        # Dernier ticket appelé
+        dernier_ticket_appele = Ticket.objects.filter(
+            agence=agence,
+            etat__in=['en_cours', 'termine']
+        ).order_by('-date_appel').first()
+        
+        data = {
+            'agence': {
+                'id_agence': agence.id_agence,
+                'nom_agence': agence.nom_agence
+            },
+            'tickets_en_attente': TicketSerializer(tickets_en_attente, many=True).data,
+            'tous_les_tickets': TicketSerializer(tous_les_tickets, many=True).data,
+            'nombre_tickets_en_attente': tickets_en_attente.count(),
+            'temps_attente_moyen': temps_attente_moyen,
+            'dernier_ticket_appele': TicketSerializer(dernier_ticket_appele).data if dernier_ticket_appele else None
+        }
+        
+        return Response(data)
 
 class AppelerTicketAPIView(APIView):
     def put(self, request):

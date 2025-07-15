@@ -149,10 +149,12 @@
                                     <input type="text" id="searchTicket" class="form-control" placeholder="Rechercher un ticket...">
                                     <select id="filterType" class="form-select">
                                         <option value="">Tous les types</option>
-                                        <option value="normal">Normal</option>
-                                        <option value="prioritaire">Prioritaire</option>
-                                        <option value="handicape">Handicapé</option>
-                                        <option value="personne_agee">Personne âgée</option>
+                                        <option value="RECLAMATION">Réclamation</option>
+                                        <option value="DEMANDE_INFO">Demande d'information</option>
+                                        <option value="DEMANDE_BRANCHEMENT">Demande de branchement</option>
+                                        <option value="FACTURE">Problème de facturation</option>
+                                        <option value="PANNE">Signalement de panne</option>
+                                        <option value="AUTRE">Autre</option>
                                     </select>
                                 </div>
                             </div>
@@ -164,7 +166,7 @@
                                                 <th>Numéro</th>
                                                 <th>Type</th>
                                                 <th>Date d'émission</th>
-                                                <th>Position</th>
+                                                <th>État/Position</th>
                                                 <th>Localisation</th>
                                                 <th>Temps d'attente</th>
                                                 <th>Actions</th>
@@ -225,12 +227,14 @@
         // Variables globales
         let currentTicket = null;
         let currentClientCoords = null;
-        const API_BASE_URL = 'http://localhost:8000/api';
+        const API_BASE_URL = window.location.origin + '/api';
         const AGENCE_ID = '2c8ee4e2-ad2d-4845-b9e5-aa9b46b3c2e1';
         const AGENT_ID = '369dbb65-0d67-47fd-bad2-1182c6c09c67';
         let allTickets = [];
         let notificationSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3');
         let map = null;
+        let serverConnected = true;
+        let refreshInterval = null;
 
         // Fonction pour lire un message à voix haute
         function speakMessage(message) {
@@ -264,8 +268,13 @@
             
             const bsToast = new bootstrap.Toast(toast);
             bsToast.show();
-            notificationSound.play();
-            if (shouldSpeak) {
+            
+            // Ne jouer le son que si le serveur est connecté et pour les succès
+            if (serverConnected && type === 'success') {
+                notificationSound.play();
+            }
+            
+            if (shouldSpeak && serverConnected) {
                 speakMessage(message);
             }
         }
@@ -284,18 +293,40 @@
             displayTickets(filteredTickets);
         }
 
+        // Fonction pour arrêter le rafraîchissement automatique
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
+        // Fonction pour démarrer le rafraîchissement automatique
+        function startAutoRefresh() {
+            if (!refreshInterval) {
+                refreshInterval = setInterval(loadTickets, 5000);
+            }
+        }
+
         // Fonction pour charger la liste des tickets
         async function loadTickets() {
             try {
-                const response = await fetch(`${API_BASE_URL}/client/file-attente/${AGENCE_ID}/`);
+                const response = await fetch(`${API_BASE_URL}/agent/tickets-agence/${AGENCE_ID}/`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const data = await response.json();
-                console.log('Tickets reçus:', data); // Pour le débogage
-                allTickets = data.tickets_en_attente || []; // Stocker tous les tickets
-                filterTickets(); // Appliquer les filtres
+                console.log('Tickets reçus:', data);
+                allTickets = data.tous_les_tickets || [];
+                filterTickets();
                 updateStats(data);
+                serverConnected = true;
             } catch (error) {
                 console.error('Erreur lors du chargement des tickets:', error);
-                showNotification('Erreur lors du chargement des tickets', 'danger');
+                serverConnected = false;
+                stopAutoRefresh();
             }
         }
 
@@ -317,12 +348,26 @@
                 // Calculer le temps d'attente en fonction de la position
                 const tempsAttente = ticket.position_file ? ticket.position_file * 2 : 0;
                 
+                // Déterminer l'affichage de la position
+                let positionDisplay = '';
+                if (ticket.etat === 'en_attente') {
+                    positionDisplay = ticket.position_file || 'En attente';
+                } else if (ticket.etat === 'en_cours') {
+                    positionDisplay = '<span class="badge bg-warning">En cours</span>';
+                } else if (ticket.etat === 'termine') {
+                    positionDisplay = '<span class="badge bg-success">Terminé</span>';
+                } else if (ticket.etat === 'annule') {
+                    positionDisplay = '<span class="badge bg-danger">Annulé</span>';
+                } else {
+                    positionDisplay = '<span class="badge bg-secondary">' + ticket.etat + '</span>';
+                }
+                
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${ticket.numero_ticket}</td>
                     <td>${ticket.type_reservation}</td>
                     <td>${new Date(ticket.date_emission).toLocaleString()}</td>
-                    <td>${ticket.position_file || 'N/A'}</td>
+                    <td>${positionDisplay}</td>
                     <td>
                         <button class="btn btn-info btn-sm" onclick="localiserClient(${ticket.client_latitude || 0}, ${ticket.client_longitude || 0})">
                             <i class="fas fa-map-marker-alt"></i> Voir sur la carte
@@ -371,11 +416,10 @@
                 if (response.ok && data.ticket) {
                     setCurrentTicket(data.ticket);
                     loadTickets();
-                    // Extraire les deux derniers chiffres du numéro de ticket
                     const lastTwoDigits = data.ticket.numero_ticket.slice(-2);
                     const displayMessage = `Le ticket numéro ${data.ticket.numero_ticket} est appelé`;
                     const voiceMessage = `Le ticket numéro ${lastTwoDigits} est appelé`;
-                    showNotification(displayMessage, 'success');
+                    showNotification(displayMessage, 'success', false);
                     speakMessage(voiceMessage);
                 }
             } catch (error) {
@@ -426,39 +470,30 @@
 
         // Fonction pour localiser un client
         function localiserClient(latitude, longitude) {
-            // Vérifier si les coordonnées sont valides
             if (!latitude || !longitude || latitude === 0 || longitude === 0) {
                 showNotification('Les coordonnées du client ne sont pas disponibles', 'warning');
                 return;
             }
 
             try {
-                // Sauvegarder les coordonnées actuelles
                 currentClientCoords = { latitude, longitude };
-
-                // Nettoyer le conteneur de la carte
                 const mapContainer = document.getElementById('map');
                 mapContainer.innerHTML = '';
                 
-                // Initialiser la carte
                 map = L.map('map').setView([latitude, longitude], 15);
                 
-                // Ajouter le fond de carte OpenStreetMap
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© OpenStreetMap contributors'
                 }).addTo(map);
                 
-                // Ajouter un marqueur à la position du client
                 L.marker([latitude, longitude])
                     .addTo(map)
                     .bindPopup('Position du client')
                     .openPopup();
                 
-                // Afficher le modal
                 const mapModal = new bootstrap.Modal(document.getElementById('mapModal'));
                 mapModal.show();
                 
-                // Redimensionner la carte après l'ouverture du modal
                 setTimeout(() => {
                     map.invalidateSize();
                 }, 400);
@@ -475,14 +510,12 @@
                 return;
             }
 
-            // Demander la position actuelle de l'agent
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const agentLat = position.coords.latitude;
                         const agentLng = position.coords.longitude;
                         
-                        // Ouvrir Google Maps avec les directions
                         const url = `https://www.google.com/maps/dir/?api=1&origin=${agentLat},${agentLng}&destination=${currentClientCoords.latitude},${currentClientCoords.longitude}&travelmode=driving`;
                         window.open(url, '_blank');
                     },
@@ -509,11 +542,15 @@
         document.getElementById('searchTicket').addEventListener('input', filterTickets);
         document.getElementById('filterType').addEventListener('change', filterTickets);
 
+        // Gestion de la fermeture de la page
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
+        });
+
         // Charger les tickets au chargement de la page
         document.addEventListener('DOMContentLoaded', () => {
             loadTickets();
-            // Rafraîchir la liste toutes les 5 secondes
-            setInterval(loadTickets, 5000);
+            startAutoRefresh();
         });
     </script>
 </body>

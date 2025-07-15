@@ -128,9 +128,15 @@ class FileAttenteAPIView(APIView):
             etat__in=['en_cours', 'termine']
         ).order_by('-date_appel').first()
         
+        # Récupérer tous les tickets de l'agence (tous états)
+        tous_les_tickets = Ticket.objects.filter(
+            agence=agence
+        ).order_by('-date_emission')
+        
         data = {
             'agence': AgenceSerializer(agence).data,
             'tickets_en_attente': TicketSerializer(tickets_en_attente, many=True).data,
+            'tous_les_tickets': TicketSerializer(tous_les_tickets, many=True).data,
             'nombre_tickets_en_attente': tickets_en_attente.count(),
             'temps_attente_moyen': temps_attente_moyen,
             'dernier_ticket_appele': TicketSerializer(dernier_ticket_appele).data if dernier_ticket_appele else None
@@ -583,12 +589,21 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
 
 @api_view(['GET'])
 def agent_dashboard(request):
+    """Vue pour le dashboard agent"""
     try:
-        # Récupérer l'agent par son ID
-        agent = Agent.objects.get(id='369dbb65-0d67-47fd-bad2-1182c6c09c67')
+        # Récupérer le premier agent disponible ou créer un agent par défaut
+        agent = Agent.objects.first()
+        if not agent:
+            # Créer un agent par défaut si aucun n'existe
+            agent = Agent.objects.create(
+                nom='Agent',
+                prenom='Par Défaut',
+                is_active=True
+            )
+        
         return render(request, 'appticket/agent_dashboard.html', {'agent': agent})
-    except Agent.DoesNotExist:
-        return Response({'error': 'Agent non trouvé'}, status=404)
+    except Exception as e:
+        return Response({'error': f'Erreur: {str(e)}'}, status=500)
 
 
 def create_ticket_view(request):

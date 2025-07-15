@@ -70,6 +70,11 @@ manual_urlpatterns = [
          views_agent.AgentStatistiquesAPIView.as_view(), 
          name='agent_statistiques_api'),
     
+    # NOUVELLE URL POUR LES TICKETS DE L'AGENCE
+    path('agent/tickets-agence/<uuid:agence_id>/', 
+         views_agent.AgentTicketsAgenceAPIView.as_view(), 
+         name='agent_tickets_agence'),
+    
     # Appeler un ticket
     path('agent/appeler-ticket/', 
          views.AppelTicketAPIView.as_view(), 
