@@ -155,3 +155,5 @@ CORS_ALLOWED_HEADERS = [
     'x-csrftoken',
     'x-requested-with',
 ]
+
+LOGIN_URL = '/login/'

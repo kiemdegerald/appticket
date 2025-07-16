@@ -4,7 +4,7 @@ from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from django.db.models import Count, Q, Avg
 from django.db import transaction
@@ -23,6 +23,9 @@ from .serializers import (
     StatistiquesSerializer, ConfigurationDistributionSerializer,
     AppelTicketSerializer
 )
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import Group
 
 
 # ==================== VUES POUR LES CLIENTS ====================
@@ -464,6 +467,7 @@ class StatistiquesAPIView(APIView):
             etat='termine',
             date_fin__date=today  # Changé de date_emission à date_fin
         ).count()
+        nombre_tickets_en_cours = Ticket.objects.filter(etat='en_cours').count()
         
         # Temps d'attente moyen
         tickets_termines = Ticket.objects.filter(
@@ -510,6 +514,7 @@ class StatistiquesAPIView(APIView):
             'total_tickets_aujourd_hui': total_tickets_aujourd_hui,
             'total_tickets_en_attente': total_tickets_en_attente,
             'total_tickets_termines_aujourd_hui': total_tickets_termines_aujourd_hui,
+            'nombre_tickets_en_cours': nombre_tickets_en_cours,
             'temps_attente_moyen': round(temps_attente_moyen, 2),
             'repartition_par_type': repartition_par_type,
             'repartition_par_agence': repartition_par_agence,
@@ -587,20 +592,15 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
         return queryset.order_by('-date_envoi')
 
 
-@api_view(['GET'])
+def is_agent(user):
+    return user.groups.filter(name='agent').exists()
+
+@login_required
+@user_passes_test(is_agent)
 def agent_dashboard(request):
-    """Vue pour le dashboard agent"""
     try:
-        # Récupérer le premier agent disponible ou créer un agent par défaut
-        agent = Agent.objects.first()
-        if not agent:
-            # Créer un agent par défaut si aucun n'existe
-            agent = Agent.objects.create(
-                nom='Agent',
-                prenom='Par Défaut',
-                is_active=True
-            )
-        
+        agent = None
+        # Optionnel : récupérer l'agent lié à l'utilisateur si tu veux lier User et Agent plus tard
         return render(request, 'appticket/agent_dashboard.html', {'agent': agent})
     except Exception as e:
         return Response({'error': f'Erreur: {str(e)}'}, status=500)
@@ -612,3 +612,28 @@ def create_ticket_view(request):
 
 def create_agence_view(request):
     return render(request, 'appticket/create_agence.html')
+
+
+def login_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            # Redirection selon le groupe
+            if user.groups.filter(name='agent').exists():
+                return redirect('agent_dashboard')
+            elif user.groups.filter(name='administrateur').exists():
+                return redirect('admin_dashboard')  # À créer plus tard
+            else:
+                logout(request)
+                return render(request, 'appticket/login.html', {'error': "Aucun profil valide n'est associé à ce compte."})
+        else:
+            return render(request, 'appticket/login.html', {'error': 'Nom d’utilisateur ou mot de passe incorrect.'})
+    return render(request, 'appticket/login.html')
+
+@login_required
+def logout_view(request):
+    logout(request)
+    return redirect('login')

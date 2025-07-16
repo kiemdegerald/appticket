@@ -17,6 +17,9 @@ router.register(r'notifications', views.NotificationViewSet)
 # URLs principales de l'application
 
 manual_urlpatterns = [
+    # Authentification
+    path('login/', views.login_view, name='login'),
+    path('logout/', views.logout_view, name='logout'),
     # ==================== URLS POUR LES CLIENTS ====================
     
     # Page de création de ticket
