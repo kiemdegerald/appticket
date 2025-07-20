@@ -80,13 +80,17 @@ manual_urlpatterns = [
     
     # Appeler un ticket
     path('agent/appeler-ticket/', 
-         views.AppelTicketAPIView.as_view(), 
+         views_agent.AppelerTicketAPIView.as_view(), 
          name='appeler-ticket'),
     
     # Terminer un ticket
     path('agent/terminer-ticket/', 
-         views.TerminerTicketAPIView.as_view(), 
+         views_agent.TerminerTicketAPIView.as_view(), 
          name='terminer-ticket'),
+    
+
+    
+
     
     # Gestion de la distribution automatique
     path('agent/distribution-automatique/', 

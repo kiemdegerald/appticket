@@ -10,16 +10,18 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
+            min-height: 100vh;
         }
         
         .navbar {
-            background: white !important;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border-bottom: 1px solid #e9ecef;
+            background: rgba(255,255,255,0.95) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
         
         .navbar-brand {
@@ -31,21 +33,74 @@
             padding: 30px;
             max-width: 1400px;
             margin: 0 auto;
+            position: relative;
+        }
+        
+        .main-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            z-index: -1;
         }
         
         .page-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(102,126,234,0.3);
         }
         
         .page-title {
-            font-size: 28px;
-            font-weight: bold;
-            color: #2c3e50;
+            font-size: 32px;
+            font-weight: 800;
+            color: white;
             margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
+        
+        .page-title::before {
+            content: '';
+            width: 4px;
+            height: 40px;
+            background: white;
+            border-radius: 2px;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .time-display {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+
         
         .search-section {
             display: flex;
@@ -58,11 +113,24 @@
         }
         
         .search-input {
-            padding: 10px 15px 10px 40px;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            background: white;
-            width: 250px;
+            padding: 15px 20px 15px 50px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            width: 300px;
+            color: white;
+            font-weight: 500;
+        }
+        
+        .search-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.3);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.2);
         }
         
         .search-icon {
@@ -74,43 +142,54 @@
         }
         
         .date-range {
-            padding: 10px 15px;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            background: white;
-            color: #495057;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            color: white;
             font-size: 14px;
+            font-weight: 500;
         }
         
         .stats-section {
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         
         .section-title {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 24px;
+            font-weight: 700;
             color: #2c3e50;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
+            padding: 20px 0;
+            border-bottom: 3px solid #4facfe;
         }
         
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
             margin-bottom: 30px;
         }
         
         .stat-card {
             background: white;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid #f1f3f4;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: none;
             position: relative;
             overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
         
         .stat-card::before {
@@ -119,8 +198,8 @@
             top: 0;
             left: 0;
             right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 6px;
+            background: linear-gradient(90deg, #667eea, #4facfe);
         }
         
         .stat-header {
@@ -131,18 +210,19 @@
         }
         
         .stat-icon {
-            width: 50px;
-            height: 50px;
-            border-radius: 10px;
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 24px;
             color: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         
         .stat-icon.blue {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, #667eea, #4facfe);
         }
         
         .stat-icon.teal {
@@ -150,14 +230,15 @@
         }
         
         .stat-icon.purple {
-            background: linear-gradient(135deg, #a8a4e6, #9b59b6);
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
         }
         
         .stat-value {
-            font-size: 32px;
-            font-weight: bold;
+            font-size: 36px;
+            font-weight: 800;
             color: #2c3e50;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .stat-change {
@@ -179,35 +260,37 @@
         
         .chart-bar {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: linear-gradient(90deg, #667eea, #4facfe);
             border-radius: 6px;
             width: 60%;
         }
         
         .content-section {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid #f1f3f4;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: none;
             overflow: hidden;
+            margin-bottom: 30px;
         }
         
         .content-header {
-            padding: 20px 25px;
-            border-bottom: 1px solid #e9ecef;
+            padding: 25px 30px;
+            border-bottom: 2px solid #f8f9fa;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
         }
         
         .content-title {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 22px;
+            font-weight: 700;
             color: #2c3e50;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
         
         .content-actions {
@@ -254,32 +337,40 @@
         }
         
         .table th {
-            background: #f8f9fa;
-            color: #495057;
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            color: white;
             font-weight: 600;
             font-size: 14px;
-            padding: 15px 20px;
+            padding: 20px 25px;
             border: none;
-            border-bottom: 1px solid #e9ecef;
+            border-bottom: 2px solid rgba(255,255,255,0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .table td {
-            padding: 15px 20px;
+            padding: 20px 25px;
             border: none;
             border-bottom: 1px solid #f1f3f4;
             color: #495057;
             font-size: 14px;
+            transition: all 0.2s ease;
         }
         
         .table tbody tr:hover {
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            transform: scale(1.01);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         .status-badge {
-            padding: 4px 12px;
-            border-radius: 20px;
+            padding: 6px 16px;
+            border-radius: 25px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .status-in-progress {
@@ -308,18 +399,24 @@
         }
         
         .action-icon {
-            width: 30px;
-            height: 30px;
-            border-radius: 6px;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
             color: #fff;
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea, #4facfe);
             border: none;
             font-size: 16px;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+        }
+        
+        .action-icon:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102,126,234,0.4);
         }
         .action-icon.map {
             background: #4ecdc4;
@@ -338,27 +435,28 @@
         
         .current-ticket-section {
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-            border: 1px solid #f1f3f4;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: none;
             margin-bottom: 30px;
             overflow: hidden;
         }
         
         .current-ticket-header {
-            padding: 20px 25px;
-            border-bottom: 1px solid #e9ecef;
-            background: #f8f9fa;
+            padding: 25px 30px;
+            border-bottom: 2px solid #f8f9fa;
+            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            color: white;
         }
         
         .current-ticket-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #2c3e50;
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
         
         .current-ticket-body {
@@ -394,18 +492,23 @@
         }
         
         .terminer-btn {
-            background: #28a745;
+            background: linear-gradient(135deg, #28a745, #20c997);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 500;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(40,167,69,0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .terminer-btn:hover {
-            background: #218838;
+            background: linear-gradient(135deg, #20c997, #28a745);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40,167,69,0.4);
         }
         
         .filters-section {
@@ -435,6 +538,10 @@
             z-index: 1050;
         }
         
+
+        
+
+        
         @media (max-width: 768px) {
             .main-container {
                 padding: 15px;
@@ -454,6 +561,42 @@
                 grid-template-columns: 1fr;
             }
         }
+        
+        /* Animations et effets */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .stat-card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+        
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        
+        /* Effet de particules en arrière-plan */
+        .main-container::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 80%, rgba(102,126,234,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(79,172,254,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(102,126,234,0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
@@ -469,20 +612,20 @@
                 <a href="{% url 'logout' %}" class="btn btn-outline-secondary">Déconnexion</a>
             </div>
         </div>
-    </nav>
+        </nav>
     
     <div class="main-container">
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">Dashboard</h1>
-            <div class="search-section">
-                <div class="search-box">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" class="search-input" placeholder="Search...">
+            <div class="header-actions">
+                <div class="status-indicator">
+                    <i class="fas fa-circle text-success me-2"></i>
+                    <span class="status-text">En ligne</span>
                 </div>
-                <div class="date-range">
-                    <i class="fas fa-calendar me-2"></i>
-                    Oct 25 - Oct 30
+                <div class="time-display">
+                    <i class="fas fa-clock me-2"></i>
+                    <span id="currentTime"></span>
                 </div>
             </div>
         </div>
@@ -491,7 +634,7 @@
         <div class="stats-section">
             <h2 class="section-title">
                 <i class="fas fa-chart-line"></i>
-                Overview
+                Aperçu
             </h2>
             <div class="stats-grid">
                 <div class="stat-card">
@@ -509,7 +652,7 @@
                     </div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card" onclick="afficherTicketsTermines()" style="cursor: pointer;">
                     <div class="stat-header">
                         <div>
                             <div class="stat-value" id="ticketsTermines">0</div>
@@ -609,7 +752,8 @@
                                 <th>NUMÉRO</th>
                                 <th>TYPE</th>
                                 <th>DATE D'ÉMISSION</th>
-                                <th>ÉTAT/POSITION</th>
+                                <th>POSITION</th>
+                                <th>ÉTAT</th>
                                 <th>LOCALISATION</th>
                                 <th>TEMPS D'ATTENTE</th>
                                 <th style="width: 100px;">ACTIONS</th>
@@ -657,6 +801,102 @@
                         <button id="navigationButton" class="btn btn-primary" onclick="naviguerVersClient()">
                             <i class="fas fa-directions"></i> Obtenir l'itinéraire
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal pour les tickets terminés -->
+    <div class="modal fade" id="ticketsTerminesModal" tabindex="-1" aria-labelledby="ticketsTerminesModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                <div class="modal-header border-0 text-white" style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <div class="bg-white bg-opacity-20 rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                <i class="fas fa-trophy fa-lg text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="modal-title mb-0" id="ticketsTerminesModalLabel">
+                                <span class="fw-bold">Tickets Terminés</span>
+                            </h4>
+                            <small class="text-white-50">Historique des tickets traités avec succès</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body p-0" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px);">
+                    <!-- Sélecteur de date -->
+                    <div class="p-4 border-bottom">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <label for="dateSelector" class="form-label fw-bold text-dark mb-2">
+                                    <i class="fas fa-calendar-alt me-2"></i>Sélectionner une date
+                                </label>
+                                <input type="date" id="dateSelector" class="form-control" 
+                                       value="" onchange="filtrerParDate()">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="d-flex gap-2 mt-3 mt-md-0">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="setDate('today')">
+                                        <i class="fas fa-calendar-day me-1"></i>Aujourd'hui
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="setDate('yesterday')">
+                                        <i class="fas fa-calendar-minus me-1"></i>Hier
+                                    </button>
+                                    <button class="btn btn-outline-info btn-sm" onclick="setDate('week')">
+                                        <i class="fas fa-calendar-week me-1"></i>Cette semaine
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="setDate('all')">
+                                        <i class="fas fa-calendar me-1"></i>Toutes les dates
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div class="row g-0 p-4 justify-content-center" id="statsCards">
+                        <div class="col-md-3">
+                            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #4CAF50, #45a049);">
+                                <div class="card-body text-white text-center">
+                                    <i class="fas fa-check-circle fa-2x mb-2"></i>
+                                    <h3 class="mb-0" id="totalTermines">0</h3>
+                                    <small>Total Terminés</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card border-0 shadow-sm h-100" style="background: linear-gradient(135deg, #2196F3, #1976D2);">
+                                <div class="card-body text-white text-center">
+                                    <i class="fas fa-calendar-day fa-2x mb-2"></i>
+                                    <h3 class="mb-0" id="ticketsDate">0</h3>
+                                    <small>Tickets de la date</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tickets Grid -->
+                    <div class="px-4 pb-4">
+                        <div class="row g-3" id="ticketsTerminesGrid">
+                            <!-- Les tickets seront affichés ici en cards -->
+                        </div>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-between align-items-center px-4 pb-4">
+                        <div class="text-muted">
+                            <span id="paginationInfo">Affichage 1-7 de 0 résultats</span>
+                        </div>
+                        <nav aria-label="Pagination des tickets terminés">
+                            <ul class="pagination pagination-sm mb-0" id="pagination">
+                                <!-- La pagination sera générée dynamiquement -->
+                            </ul>
+                        </nav>
                     </div>
                 </div>
             </div>
@@ -746,6 +986,33 @@
                 refreshInterval = setInterval(loadTickets, 5000);
             }
         }
+        
+        // Fonction pour basculer l'auto-actualisation
+        function toggleAutoRefresh() {
+            const btn = document.getElementById('autoRefreshBtn');
+            const icon = btn.querySelector('i');
+            
+            if (refreshInterval) {
+                stopAutoRefresh();
+                icon.className = 'fas fa-play';
+                btn.title = 'Démarrer auto-actualisation';
+            } else {
+                startAutoRefresh();
+                icon.className = 'fas fa-pause';
+                btn.title = 'Arrêter auto-actualisation';
+            }
+        }
+        
+        // Fonction pour mettre à jour l'heure
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentTime').textContent = timeString;
+        }
 
         // Fonction pour charger la liste des tickets
         async function loadTickets() {
@@ -774,31 +1041,42 @@
             const ticketsList = document.getElementById('ticketsList');
             ticketsList.innerHTML = '';
             
-            if (!tickets || tickets.length === 0) {
+            // Filtrer les tickets terminés
+            const ticketsNonTermines = tickets.filter(ticket => ticket.etat !== 'termine');
+            
+            if (!ticketsNonTermines || ticketsNonTermines.length === 0) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td colspan="8" class="text-center text-muted">Aucun ticket en attente</td>
+                    <td colspan="9" class="text-center text-muted">Aucun ticket en attente</td>
                 `;
                 ticketsList.appendChild(row);
                 return;
             }
             
-            tickets.forEach(ticket => {
+            ticketsNonTermines.forEach((ticket, index) => {
                 // Calculer le temps d'attente en fonction de la position
                 const tempsAttente = ticket.position_file ? ticket.position_file * 2 : 0;
                 
-                // Déterminer l'affichage de la position
+                // Déterminer l'affichage de la position (basé sur l'ordre d'arrivée)
                 let positionDisplay = '';
                 if (ticket.etat === 'en_attente') {
-                    positionDisplay = `<span class="status-badge status-new">En attente</span>`;
-                } else if (ticket.etat === 'en_cours') {
-                    positionDisplay = `<span class="status-badge status-in-progress">En cours</span>`;
-                } else if (ticket.etat === 'termine') {
-                    positionDisplay = `<span class="status-badge status-completed">Terminé</span>`;
-                } else if (ticket.etat === 'annule') {
-                    positionDisplay = `<span class="status-badge status-cancelled">Annulé</span>`;
+                    positionDisplay = `<span class="badge bg-primary">${index + 1}</span>`;
                 } else {
-                    positionDisplay = `<span class="status-badge status-new">${ticket.etat}</span>`;
+                    positionDisplay = `<span class="text-muted">-</span>`;
+                }
+                
+                // Déterminer l'affichage de l'état
+                let etatDisplay = '';
+                if (ticket.etat === 'en_attente') {
+                    etatDisplay = `<span class="status-badge status-new">En attente</span>`;
+                } else if (ticket.etat === 'en_cours') {
+                    etatDisplay = `<span class="status-badge status-in-progress">En cours</span>`;
+                } else if (ticket.etat === 'termine') {
+                    etatDisplay = `<span class="status-badge status-completed">Terminé</span>`;
+                } else if (ticket.etat === 'annule') {
+                    etatDisplay = `<span class="status-badge status-cancelled">Annulé</span>`;
+                } else {
+                    etatDisplay = `<span class="status-badge status-new">${ticket.etat}</span>`;
                 }
                 
                 const row = document.createElement('tr');
@@ -810,6 +1088,7 @@
                     <td>${ticket.type_reservation}</td>
                     <td>${new Date(ticket.date_emission).toLocaleString()}</td>
                     <td>${positionDisplay}</td>
+                    <td>${etatDisplay}</td>
                     <td>
                         <button class="action-icon map" onclick="localiserClient(${ticket.client_latitude || 0}, ${ticket.client_longitude || 0})" title="Voir sur la carte">
                             <i class="fas fa-map-marker-alt"></i>
@@ -842,6 +1121,307 @@
                 document.getElementById('ticketsEnCours').textContent = statsData.nombre_tickets_en_cours || 0;
             } catch (error) {
                 console.error('Erreur lors de la récupération des statistiques:', error);
+            }
+        }
+        
+        // Variables pour la pagination
+        let ticketsTermines = [];
+        let ticketsFiltres = [];
+        let currentPage = 1;
+        const itemsPerPage = 7;
+        let selectedDate = '';
+        
+        // Fonction pour afficher les tickets terminés dans le modal
+        function afficherTicketsTermines() {
+            ticketsTermines = allTickets.filter(ticket => ticket.etat === 'termine');
+            ticketsFiltres = [...ticketsTermines];
+            currentPage = 1;
+            
+            // Définir la date d'aujourd'hui par défaut
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateSelector').value = today;
+            selectedDate = today;
+            
+            filtrerParDate();
+            
+            // Afficher le modal
+            const modal = new bootstrap.Modal(document.getElementById('ticketsTerminesModal'));
+            modal.show();
+        }
+        
+        // Fonction pour filtrer par date
+        function filtrerParDate() {
+            const dateSelector = document.getElementById('dateSelector');
+            selectedDate = dateSelector.value;
+            
+            if (!selectedDate) {
+                ticketsFiltres = [...ticketsTermines];
+            } else {
+                ticketsFiltres = ticketsTermines.filter(ticket => {
+                    if (!ticket.date_fin) return false;
+                    const ticketDate = new Date(ticket.date_fin).toISOString().split('T')[0];
+                    return ticketDate === selectedDate;
+                });
+            }
+            
+            currentPage = 1;
+            afficherPageTicketsTermines();
+        }
+        
+        // Fonction pour définir une date rapide
+        function setDate(type) {
+            const dateSelector = document.getElementById('dateSelector');
+            const today = new Date();
+            
+            switch(type) {
+                case 'today':
+                    dateSelector.value = today.toISOString().split('T')[0];
+                    break;
+                case 'yesterday':
+                    const yesterday = new Date(today);
+                    yesterday.setDate(today.getDate() - 1);
+                    dateSelector.value = yesterday.toISOString().split('T')[0];
+                    break;
+                case 'week':
+                    const weekAgo = new Date(today);
+                    weekAgo.setDate(today.getDate() - 7);
+                    dateSelector.value = weekAgo.toISOString().split('T')[0];
+                    break;
+                case 'all':
+                    dateSelector.value = '';
+                    break;
+            }
+            
+            filtrerParDate();
+        }
+        
+        // Fonction pour afficher une page spécifique
+        function afficherPageTicketsTermines() {
+            try {
+                const ticketsGrid = document.getElementById('ticketsTerminesGrid');
+                if (!ticketsGrid) {
+                    console.error('Tickets grid element not found');
+                    return;
+                }
+                
+                ticketsGrid.innerHTML = '';
+                
+                if (!ticketsFiltres || ticketsFiltres.length === 0) {
+                    const emptyDiv = document.createElement('div');
+                    emptyDiv.className = 'col-12 text-center py-5';
+                    emptyDiv.innerHTML = `
+                        <div class="bg-light rounded-3 p-5">
+                            <i class="fas fa-trophy fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">Aucun ticket terminé</h4>
+                            <p class="text-muted">${selectedDate ? `Aucun ticket terminé le ${selectedDate}` : 'Commencez à traiter des tickets pour voir votre historique ici'}</p>
+                        </div>
+                    `;
+                    ticketsGrid.appendChild(emptyDiv);
+                    document.getElementById('paginationInfo').textContent = 'Aucun résultat';
+                    document.getElementById('pagination').innerHTML = '';
+                    return;
+                }
+            
+            // Calculer les indices de début et fin pour la page actuelle
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const ticketsPage = ticketsFiltres.slice(startIndex, endIndex);
+            
+            // Mettre à jour les statistiques
+            mettreAJourStatistiques();
+            
+            ticketsPage.forEach(ticket => {
+                // Calculer la durée de traitement
+                let dureeTraitement = 'N/A';
+                let dureeClass = 'text-muted';
+                let dureeBadge = 'bg-secondary';
+                let performanceIcon = 'fas fa-clock';
+                
+                if (ticket.date_debut && ticket.date_fin) {
+                    const debut = new Date(ticket.date_debut);
+                    const fin = new Date(ticket.date_fin);
+                    const dureeMinutes = Math.round((fin - debut) / (1000 * 60));
+                    dureeTraitement = `${dureeMinutes} min`;
+                    
+                    // Colorer la durée selon le temps
+                    if (dureeMinutes <= 5) {
+                        dureeClass = 'text-success';
+                        dureeBadge = 'bg-success';
+                        performanceIcon = 'fas fa-rocket';
+                    } else if (dureeMinutes <= 15) {
+                        dureeClass = 'text-warning';
+                        dureeBadge = 'bg-warning';
+                        performanceIcon = 'fas fa-bolt';
+                    } else {
+                        dureeClass = 'text-danger';
+                        dureeBadge = 'bg-danger';
+                        performanceIcon = 'fas fa-hourglass-half';
+                    }
+                }
+                
+                // Déterminer l'icône selon le type
+                let typeIcon = 'fas fa-ticket-alt';
+                let typeColor = 'bg-primary';
+                
+                switch(ticket.type_reservation) {
+                    case 'RECLAMATION':
+                        typeIcon = 'fas fa-exclamation-triangle';
+                        typeColor = 'bg-warning';
+                        break;
+                    case 'DEMANDE_INFO':
+                        typeIcon = 'fas fa-info-circle';
+                        typeColor = 'bg-info';
+                        break;
+                    case 'DEMANDE_BRANCHEMENT':
+                        typeIcon = 'fas fa-plug';
+                        typeColor = 'bg-success';
+                        break;
+                    case 'FACTURE':
+                        typeIcon = 'fas fa-file-invoice-dollar';
+                        typeColor = 'bg-danger';
+                        break;
+                    case 'PANNE':
+                        typeIcon = 'fas fa-tools';
+                        typeColor = 'bg-dark';
+                        break;
+                }
+                
+                const card = document.createElement('div');
+                card.className = 'col-md-6 col-lg-4';
+                card.innerHTML = `
+                    <div class="card border-0 shadow-sm h-100" style="transition: all 0.3s ease;">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="${typeColor} rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 40px; height: 40px;">
+                                        <i class="${typeIcon} text-white"></i>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold">${ticket.numero_ticket}</h6>
+                                        <small class="text-muted">${ticket.type_reservation}</small>
+                                    </div>
+                                </div>
+                                <span class="badge ${dureeBadge}">${dureeTraitement}</span>
+                            </div>
+                            
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Émission</small>
+                                    <small class="fw-bold">${new Date(ticket.date_emission).toLocaleDateString('fr-FR')}</small>
+                                    <small class="text-muted d-block">${new Date(ticket.date_emission).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</small>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Terminé</small>
+                                    <small class="fw-bold">${ticket.date_fin ? new Date(ticket.date_fin).toLocaleDateString('fr-FR') : 'N/A'}</small>
+                                    <small class="text-muted d-block">${ticket.date_fin ? new Date(ticket.date_fin).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'}) : 'N/A'}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="row g-2 mb-3">
+                                <div class="col-12">
+                                    <small class="text-muted d-block">Localisation</small>
+                                    <div class="d-flex align-items-center">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="localiserClient(${ticket.client_latitude || 0}, ${ticket.client_longitude || 0})" title="Voir sur la carte">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Ajouter effet hover
+                card.querySelector('.card').addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.boxShadow = '0 10px 25px rgba(0,0,0,0.15)';
+                });
+                
+                card.querySelector('.card').addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+                });
+                
+                ticketsGrid.appendChild(card);
+            });
+            
+            // Mettre à jour les informations de pagination
+            const totalItems = ticketsFiltres.length;
+            const startItem = startIndex + 1;
+            const endItem = Math.min(endIndex, totalItems);
+            document.getElementById('paginationInfo').textContent = 
+                `Affichage ${startItem}-${endItem} de ${totalItems} résultats`;
+            
+            // Générer la pagination
+            genererPagination(totalItems);
+        } catch (error) {
+            console.error('Erreur lors de l\'affichage des tickets terminés:', error);
+        }
+        }
+        
+        // Fonction pour mettre à jour les statistiques
+        function mettreAJourStatistiques() {
+            const total = ticketsTermines.length;
+            const ticketsDate = ticketsFiltres.length;
+            
+            document.getElementById('totalTermines').textContent = total;
+            document.getElementById('ticketsDate').textContent = ticketsDate;
+        }
+        
+        // Fonction pour générer la pagination
+        function genererPagination(totalItems) {
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+            
+            if (totalPages <= 1) {
+                return;
+            }
+            
+            // Bouton précédent
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changerPage(${currentPage - 1})">
+                    <i class="fas fa-chevron-left"></i>
+                </a>
+            `;
+            pagination.appendChild(prevLi);
+            
+            // Pages numérotées
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+            
+            if (endPage - startPage + 1 < maxVisiblePages) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === currentPage ? 'active' : ''}`;
+                pageLi.innerHTML = `
+                    <a class="page-link" href="#" onclick="changerPage(${i})">${i}</a>
+                `;
+                pagination.appendChild(pageLi);
+            }
+            
+            // Bouton suivant
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+            nextLi.innerHTML = `
+                <a class="page-link" href="#" onclick="changerPage(${currentPage + 1})">
+                    <i class="fas fa-chevron-right"></i>
+                </a>
+            `;
+            pagination.appendChild(nextLi);
+        }
+        
+        // Fonction pour changer de page
+        function changerPage(page) {
+            if (page >= 1 && page <= Math.ceil(ticketsFiltres.length / itemsPerPage)) {
+                currentPage = page;
+                afficherPageTicketsTermines();
             }
         }
 
@@ -999,6 +1579,10 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadTickets();
             startAutoRefresh();
+            
+            // Initialiser l'heure et la mettre à jour chaque seconde
+            updateTime();
+            setInterval(updateTime, 1000);
         });
     </script>
 </body>
