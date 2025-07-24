@@ -354,7 +354,14 @@
                     throw new Error('Erreur lors du chargement des tickets');
                 }
                 
-                const tickets = await response.json();
+                let tickets = await response.json();
+                // Filtrer par agence sélectionnée
+                const agenceId = document.getElementById('agence').value;
+                if (agenceId) {
+                    tickets = tickets.filter(ticket => ticket.agence === agenceId || ticket.agence?.id_agence === agenceId);
+                }
+                // Trier par date d'émission décroissante (plus récent en haut, plus ancien en bas)
+                tickets.sort((a, b) => new Date(b.date_emission) - new Date(a.date_emission));
                 allTickets = tickets;
                 displayTickets(tickets);
             } catch (error) {

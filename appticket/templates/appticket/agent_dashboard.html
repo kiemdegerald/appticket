@@ -10,7 +10,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            background: #f7f7f9;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 0;
@@ -22,6 +22,11 @@
             backdrop-filter: blur(20px);
             box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             border-bottom: 1px solid rgba(255,255,255,0.2);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1055;
         }
         
         .navbar-brand {
@@ -43,10 +48,10 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
+            background: #fff;
+            backdrop-filter: blur(0px);
             border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.04);
             z-index: -1;
         }
         
@@ -56,16 +61,16 @@
             align-items: center;
             margin-bottom: 40px;
             padding: 30px;
-            background: linear-gradient(135deg, #667eea 0%, #4facfe 100%);
+            background: #fff;
             border-radius: 20px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(102,126,234,0.3);
+            color: #495057;
+            box-shadow: 0 10px 30px rgba(102,126,234,0.08);
         }
         
         .page-title {
             font-size: 32px;
             font-weight: 800;
-            color: white;
+            color: #495057;
             margin: 0;
             display: flex;
             align-items: center;
@@ -76,7 +81,7 @@
             content: '';
             width: 4px;
             height: 40px;
-            background: white;
+            background: #e9ecef;
             border-radius: 2px;
         }
         
@@ -601,7 +606,7 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light">
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">ONEA</a>
             <div class="d-flex ms-auto align-items-center">
@@ -614,7 +619,7 @@
         </div>
         </nav>
     
-    <div class="main-container">
+    <div class="main-container" style="padding-top: 80px;">
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">Dashboard</h1>
@@ -1037,48 +1042,71 @@
         }
 
         // Fonction pour afficher les tickets dans le tableau
+        // Pagination pour le tableau principal
+        let currentTablePage = 1;
+        const itemsPerTablePage = 10;
+
         function displayTickets(tickets) {
             const ticketsList = document.getElementById('ticketsList');
             ticketsList.innerHTML = '';
-            
+
             // Filtrer les tickets terminés
             const ticketsNonTermines = tickets.filter(ticket => ticket.etat !== 'termine');
-            
+
             if (!ticketsNonTermines || ticketsNonTermines.length === 0) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td colspan="9" class="text-center text-muted">Aucun ticket en attente</td>
                 `;
                 ticketsList.appendChild(row);
+                // Mettre à jour la pagination
+                updateTablePagination(0, 0, 0);
                 return;
             }
-            
-            ticketsNonTermines.forEach((ticket, index) => {
-                // Calculer le temps d'attente en fonction de la position
-                const tempsAttente = ticket.position_file ? ticket.position_file * 2 : 0;
-                
-                // Déterminer l'affichage de la position (basé sur l'ordre d'arrivée)
-                let positionDisplay = '';
+
+            // On filtre et trie les tickets en attente par date d'émission croissante (plus ancien en premier)
+            const ticketsEnAttente = ticketsNonTermines
+                .filter(t => t.etat === 'en_attente')
+                .sort((a, b) => new Date(a.date_emission) - new Date(b.date_emission));
+
+            // Afficher les tickets en attente du plus ancien au plus récent
+            const ticketsNonTerminesTries = [
+                ...ticketsEnAttente,
+                ...ticketsNonTermines.filter(t => t.etat !== 'en_attente')
+            ];
+
+            // Pagination
+            const totalItems = ticketsNonTerminesTries.length;
+            const totalPages = Math.ceil(totalItems / itemsPerTablePage);
+            if (currentTablePage > totalPages) currentTablePage = 1;
+            const startIndex = (currentTablePage - 1) * itemsPerTablePage;
+            const endIndex = Math.min(startIndex + itemsPerTablePage, totalItems);
+            const ticketsPage = ticketsNonTerminesTries.slice(startIndex, endIndex);
+
+            ticketsPage.forEach((ticket) => {
+                let tempsAttente = '-';
+                let positionDisplay = '<span class="text-muted">-</span>';
                 if (ticket.etat === 'en_attente') {
-                    positionDisplay = `<span class="badge bg-primary">${index + 1}</span>`;
-                } else {
-                    positionDisplay = `<span class="text-muted">-</span>`;
+                    // Trouver la position dynamique dans la file d'attente
+                    const pos = ticketsEnAttente.findIndex(t => t.id_ticket === ticket.id_ticket) + 1;
+                    tempsAttente = (pos * 3) + ' min';
+                    positionDisplay = `<span class="badge bg-primary">${pos}</span>`;
                 }
-                
+
                 // Déterminer l'affichage de l'état
                 let etatDisplay = '';
                 if (ticket.etat === 'en_attente') {
-                    etatDisplay = `<span class="status-badge status-new">En attente</span>`;
+                    etatDisplay = `<span class="status-badge status-new text-nowrap">En attente</span>`;
                 } else if (ticket.etat === 'en_cours') {
-                    etatDisplay = `<span class="status-badge status-in-progress">En cours</span>`;
+                    etatDisplay = `<span class="status-badge status-in-progress text-nowrap">En cours</span>`;
                 } else if (ticket.etat === 'termine') {
-                    etatDisplay = `<span class="status-badge status-completed">Terminé</span>`;
+                    etatDisplay = `<span class="status-badge status-completed text-nowrap">Terminé</span>`;
                 } else if (ticket.etat === 'annule') {
-                    etatDisplay = `<span class="status-badge status-cancelled">Annulé</span>`;
+                    etatDisplay = `<span class="status-badge status-cancelled text-nowrap">Annulé</span>`;
                 } else {
-                    etatDisplay = `<span class="status-badge status-new">${ticket.etat}</span>`;
+                    etatDisplay = `<span class="status-badge status-new text-nowrap">${ticket.etat}</span>`;
                 }
-                
+
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>
@@ -1094,7 +1122,7 @@
                             <i class="fas fa-map-marker-alt"></i>
                         </button>
                     </td>
-                    <td>${tempsAttente} minutes</td>
+                    <td>${tempsAttente}</td>
                     <td>
                         <div class="table-actions">
                             <button class="action-icon bell" onclick="appelerTicket('${ticket.id_ticket}')" title="Appeler">
@@ -1108,6 +1136,58 @@
                 `;
                 ticketsList.appendChild(row);
             });
+
+            // Mettre à jour la pagination
+            updateTablePagination(currentTablePage, totalPages, totalItems);
+        }
+
+        // Générer la pagination du tableau principal
+        function updateTablePagination(current, total, totalItems) {
+            let paginationContainer = document.getElementById('tablePagination');
+            if (!paginationContainer) {
+                // Créer le conteneur si besoin
+                paginationContainer = document.createElement('nav');
+                paginationContainer.id = 'tablePagination';
+                paginationContainer.className = 'd-flex justify-content-end mt-2';
+                const tableContainer = document.querySelector('.table-responsive');
+                tableContainer.parentNode.insertBefore(paginationContainer, tableContainer.nextSibling);
+            }
+            paginationContainer.innerHTML = '';
+            if (total <= 1) return;
+
+            const ul = document.createElement('ul');
+            ul.className = 'pagination pagination-sm mb-0';
+
+            // Précédent
+            const prevLi = document.createElement('li');
+            prevLi.className = `page-item ${current === 1 ? 'disabled' : ''}`;
+            prevLi.innerHTML = `<a class="page-link" href="#" onclick="changeTablePage(${current - 1});return false;"><i class="fas fa-chevron-left"></i></a>`;
+            ul.appendChild(prevLi);
+
+            // Pages numérotées (max 5)
+            let startPage = Math.max(1, current - 2);
+            let endPage = Math.min(total, startPage + 4);
+            if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+            for (let i = startPage; i <= endPage; i++) {
+                const pageLi = document.createElement('li');
+                pageLi.className = `page-item ${i === current ? 'active' : ''}`;
+                pageLi.innerHTML = `<a class="page-link" href="#" onclick="changeTablePage(${i});return false;">${i}</a>`;
+                ul.appendChild(pageLi);
+            }
+
+            // Suivant
+            const nextLi = document.createElement('li');
+            nextLi.className = `page-item ${current === total ? 'disabled' : ''}`;
+            nextLi.innerHTML = `<a class="page-link" href="#" onclick="changeTablePage(${current + 1});return false;"><i class="fas fa-chevron-right"></i></a>`;
+            ul.appendChild(nextLi);
+
+            paginationContainer.appendChild(ul);
+        }
+
+        // Changer de page du tableau principal
+        function changeTablePage(page) {
+            currentTablePage = page;
+            filterTickets();
         }
 
         // Fonction pour mettre à jour les statistiques

@@ -158,13 +158,17 @@ class TicketSerializer(serializers.ModelSerializer):
         return None
     
     def get_position_file(self, obj):
-        """Retourne la position du ticket dans la file d'attente"""
+        """Retourne la position du ticket dans la file d'attente (1 = le plus récent, N = le plus ancien)"""
         if obj.etat == 'en_attente':
-            return Ticket.objects.filter(
+            tickets = Ticket.objects.filter(
                 agence=obj.agence,
-                etat='en_attente',
-                date_emission__lt=obj.date_emission
-            ).count() + 1
+                etat='en_attente'
+            ).order_by('-date_emission', '-id_ticket')
+            ids = list(tickets.values_list('id_ticket', flat=True))
+            try:
+                return ids.index(obj.id_ticket) + 1
+            except ValueError:
+                return None
         return None
 
 
